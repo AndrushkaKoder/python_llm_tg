@@ -1,94 +1,70 @@
-# import ollama
-# from atlassian import Confluence
-# import logging
-#
-# # Настроим логи, чтобы видеть, что происходит "под капотом"
-# logging.basicConfig(level=logging.INFO)
-#
-# conf = Confluence(
-#     url="https://your-domain.atlassian.net", username="email", password="API_TOKEN"
-# )
-#
-# # Хранилище истории: {chat_id: [messages]}
-# chat_histories = {}
-#
-# tools = [
-#     {
-#         "type": "function",
-#         "function": {
-#             "name": "get_confluence_content",
-#             "description": "Найти и прочитать страницу в Confluence по названию или теме",
-#             "parameters": {
-#                 "type": "object",
-#                 "properties": {
-#                     "query": {
-#                         "type": "string",
-#                         "description": "Название стандарта или темы",
-#                     },
-#                 },
-#                 "required": ["query"],
-#             },
-#         },
-#     }
-# ]
-#
-#
-# def get_confluence_content(query):
-#     try:
-#         logging.info(f"Запрос к Confluence: {query}")
-#         search = conf.search(f'text ~ "{query}"', limit=1)
-#         if search and "content" in search:
-#             page_id = search["content"]["id"]
-#             page = conf.get_page_by_id(page_id, expand="body.storage")
-#             content = page["body"]["storage"]["value"]
-#             return content[:5000]  # Берем первые 5к символов
-#         return "Информации по этому запросу в Confluence не найдено."
-#     except Exception as e:
-#         logging.error(f"Ошибка Confluence: {e}")
-#         return f"Произошла ошибка при обращении к базе знаний: {e}"
-#
-#
-# @bot.message_handler(func=lambda message: True)
-# def handle_ai_chat(message):
-#     chat_id = message.chat.id
-#
-#     if chat_id not in chat_histories:
-#         chat_histories[chat_id] = [
-#             {
-#                 "role": "system",
-#                 "content": "Ты корпоративный ассистент. Отвечай кратко и только на основе данных из инструментов.",
-#             }
-#         ]
-#
-#     try:
-#         res = ollama.chat(
-#             model="llama3.1", tools=tools, messages=chat_histories[chat_id]
-#         )
-#
-#         # ШАГ 2: Проверка на вызов инструмента
-#         if res.get("message", {}).get("tool_calls"):
-#             for tool in res["message"]["tool_calls"]:
-#                 fn_name = tool["function"]["name"]
-#                 arguments = tool["function"]["arguments"]
-#
-#                 bot.send_chat_action(chat_id, "find_location")  # Анимация "ищет"
-#                 context = get_confluence_content(arguments.get("query"))
-#
-#                 # ШАГ 3: Получаем финальный ответ от Ollama
-#                 final_res = ollama.chat(
-#                     model="llama3.1", messages=chat_histories[chat_id]
-#                 )
-#                 answer = final_res["message"]["content"]
-#         else:
-#             answer = res["message"]["content"]
-#
-#         bot.reply_to(message, answer)
-#
-#     except Exception as e:
-#         logging.error(f"Глобальная ошибка: {e}")
-#         bot.reply_to(message, "⚠️ Извини, я сломался. Попробуй позже.")
-#
-#
-# bot.infinity_polling()
+import asyncio
+import logging
 
-print('hello man')
+from telebot.async_telebot import AsyncTeleBot
+import llm
+import config
+from telebot.types import Message
+from telebot import types
+
+logging.basicConfig(level=logging.INFO)
+
+bot = AsyncTeleBot(config.TELEGRAM_TOKEN)
+
+buttons = {
+    'start': 'Перезагрузка',
+    'restart': 'Запуск',
+}
+
+
+@bot.message_handler(commands=buttons.keys())
+async def send_message(message: Message):
+    text = 'Привет! Я юридический ИИ-помощник. Начнем общение' if message.text == '/start' else 'Начнем сначала'
+
+    await bot.send_message(message.chat.id, text)
+
+
+async def set_main_menu():
+    commands = []
+    for name, value in buttons.items():
+        commands.append(types.BotCommand(name, value))
+
+    await bot.set_my_commands(commands)
+
+
+@bot.message_handler(commands=['menu'])
+async def show_menu(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("Start")
+    btn2 = types.KeyboardButton("Restart")
+    markup.add(btn1, btn2)
+
+    await bot.send_message(message.chat.id, "Выберите пункт меню:", reply_markup=markup)
+
+
+@bot.message_handler(func=lambda message: True)
+async def handle_request(message: Message):
+    wait_message = await bot.send_message(
+        message.chat.id,
+        "⏳ Ждем ответ..."
+    )
+    try:
+        llm_response = await llm.handle_user_request(message.text)
+
+        await bot.send_chat_action(message.chat.id, "typing")
+        await bot.delete_message(message.chat.id, wait_message.message_id)
+        await bot.send_message(message.chat.id, llm_response)
+    except Exception as e:
+        logging.error(e)
+        await bot.delete_message(message.chat.id, wait_message.message_id)
+        await bot.send_message(message.chat.id, 'Ваш запрос не может быть обработан. Попробуйте еще разок')
+
+
+async def debug_llm() -> None:
+    res = await llm.handle_user_request('Расскажи что такое УПК кратко')
+    print(res)
+
+
+if __name__ == '__main__':
+    asyncio.run(set_main_menu())
+    asyncio.run(bot.polling())

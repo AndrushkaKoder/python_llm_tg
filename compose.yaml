@@ -1,12 +1,21 @@
 services:
   ollama:
-    image: ollama/ollama:latest
     container_name: ollama
+    build:
+      context: _docker/ollama
+      dockerfile: Dockerfile
     volumes:
       - ollama_storage:/root/.ollama
     ports:
       - "11434:11434"
     restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
   postgres:
     image: postgres:15-alpine
