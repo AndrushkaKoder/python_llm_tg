@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_local
+    volumes:
+      - ./ollama_storage:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: always
+
+  tg_bot:
+    build: .
+    container_name: confluence_bot
+    depends_on:
+      - ollama
+    environment:
+      - TELEGRAM_TOKEN=ТВОЙ_ТОКЕН
+      - CONFLUENCE_URL=https://your-domain.atlassian.net
+      - CONFLUENCE_USER=email@example.com
+      - CONFLUENCE_TOKEN=API_TOKEN
+      - OLLAMA_HOST=http://ollama:11434
+    restart: always
