@@ -1,0 +1,7 @@
+psycopg2-binary
+sqlalchemy
+ollama
+langchain-community
+python-dotenv
+pyTelegramBotAPI
+atlassian-python-api
