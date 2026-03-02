@@ -10,7 +10,12 @@ async def handle_user_request(base_prompt: str) -> str:
         model=LLM_NAME,
         messages=[
             {'role': 'user', 'content': prepare_prompt(user_input=base_prompt)}
-        ]
+        ], options= {
+            "temperature": 0.0,
+            "top_p": 0.1,
+            "num_ctx": 4096,
+            "num_gpu": 99
+        }
     )
 
     return req['message']['content']
