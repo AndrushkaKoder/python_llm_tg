@@ -20,7 +20,6 @@ async def send_message(user_input: str) -> str:
         tools=get_tools_definition()
     )
     if response['message'].get('tool_calls'):
-        print("ОНА ПРОСИТ MCP!")
         messages = [
             {'role': 'user', 'content': user_input},
             response['message'],
@@ -29,7 +28,6 @@ async def send_message(user_input: str) -> str:
         for tool in response['message']['tool_calls']:
             if tool['function']['name'] == 'mcp_request':
                 query = tool['function']['arguments']['query']
-                print(f"🛠 Модель вызвала поиск по запросу: {query}")
 
                 search_data = mcp_request(query)
 
