@@ -1,5 +1,7 @@
-from bs4 import BeautifulSoup
+import html2text
 
 # Чистим теги html
-def clean_html(html) -> str:
-    return BeautifulSoup(html, "html.parser").get_text()
+def clean_html(raw_html) -> str:
+    h = html2text.HTML2Text()
+    h.ignore_links = False
+    return h.handle(raw_html)

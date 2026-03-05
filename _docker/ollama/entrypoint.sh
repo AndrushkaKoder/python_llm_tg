@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODEL_NAME="qwen2.5:3b"
+MODEL_NAME="qwen2.5:7b"
 
 ollama serve &
 

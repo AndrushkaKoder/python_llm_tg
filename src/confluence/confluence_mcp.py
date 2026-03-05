@@ -15,9 +15,7 @@ confluence = Confluence(
 
 @mcp.tool()
 def mcp_request(query: str) -> str:
-    """
-    Поиск страниц в Confluence по ключевым словам в заголовке или тексте.
-    """
+    """  Поиск страниц в Confluence по ключевым словам в заголовке или тексте. """
     cql = f'text ~ "{query}" OR title ~ "{query}"'
 
     try:
@@ -41,4 +39,26 @@ def mcp_request(query: str) -> str:
         return f"[{page_id}] Страница: {title}\nСодержание:\n{prepare_text[:4000]}"
 
     except Exception as e:
-        return "Ошибка поиска в этих ваших конфлюенсах: " + str(e)[:200]
+        return "Ошибка поиска в конфлюенсе: " + str(e)[:200]
+
+
+def get_tools_definition():
+    return [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'mcp_request',
+                'description': 'Поиск страниц в Confluence по ключевым словам и получение их содержания.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'query': {
+                            'type': 'string',
+                            'description': 'Тема поиска или ключевые слова (например, "Онбординг")',
+                        },
+                    },
+                    'required': ['query'],
+                },
+            },
+        },
+    ]

@@ -17,28 +17,20 @@ services:
               count: 1
               capabilities: [ gpu ]
 
-  postgres:
-    image: postgres:15-alpine
-    ports:
-      - '${PG_PORT}:5432'
-    container_name: 'postgres'
-    working_dir: '/app'
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: '${PG_DB}'
-      POSTGRES_USER: '${PG_USER}'
-      POSTGRES_PASSWORD: '${PG_PASSWORD}'
-    volumes:
-      - postgresql:/var/lib/postgresql/data
+  bot:
+    build: _docker/python
+    container_name: bot
+    depends_on:
+      - ollama
+    restart: always
+    env_file:
+      - .env
     deploy:
       resources:
         limits:
-          cpus: '1.5'
-          memory: '1G'
-        reservations:
-          memory: '256M'
+          memory: 2G
+
 
 volumes:
-  postgresql:
   ollama_storage:
 
