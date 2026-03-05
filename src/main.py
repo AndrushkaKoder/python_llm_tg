@@ -6,6 +6,7 @@ import llm
 import config
 from telebot.types import Message
 from telebot import types
+from confluence.confluence_mcp import mcp_request
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,7 +20,7 @@ buttons = {
 
 @bot.message_handler(commands=buttons.keys())
 async def send_message(message: Message):
-    text = 'Привет! Я юридический ИИ-помощник. Начнем общение' if message.text == '/start' else 'Начнем сначала'
+    text = 'Привет! Я помощник по базе знаний. Начнем общение' if message.text == '/start' else 'Начнем сначала'
 
     await bot.send_message(message.chat.id, text)
 
@@ -49,7 +50,12 @@ async def handle_request(message: Message):
         "⏳ Ждем ответ..."
     )
     try:
-        llm_response = await llm.handle_user_request(message.text)
+        data_from_confluence = mcp_request(message.text)
+
+        llm_response = await llm.handle_user_request(
+            user_input=message.text,
+            data_from_database=data_from_confluence
+        )
 
         await bot.send_chat_action(message.chat.id, "typing")
         await bot.delete_message(message.chat.id, wait_message.message_id)
@@ -58,11 +64,6 @@ async def handle_request(message: Message):
         logging.error(e)
         await bot.delete_message(message.chat.id, wait_message.message_id)
         await bot.send_message(message.chat.id, 'Ваш запрос не может быть обработан. Попробуйте еще разок')
-
-
-async def debug_llm() -> None:
-    res = await llm.handle_user_request('Расскажи что такое УПК кратко')
-    print(res)
 
 
 if __name__ == '__main__':

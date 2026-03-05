@@ -8,5 +8,8 @@ ENV_PATH = BASE_DIR / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-LLM_NAME = os.getenv("OLLAMA_NAME")
-LLM_HOST = os.getenv("OLLAMA_HOST")
+LLM_NAME = os.getenv("LLM_NAME")
+LLM_HOST = os.getenv("LLM_HOST")
+CONFLUENCE_HOST = os.getenv("CONFLUENCE_URL")
+CONFLUENCE_USER = os.getenv("CONFLUENCE_USER")
+CONFLUENCE_TOKEN = os.getenv("CONFLUENCE_TOKEN")

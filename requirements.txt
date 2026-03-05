@@ -5,3 +5,5 @@ langchain-community
 python-dotenv
 pyTelegramBotAPI
 atlassian-python-api
+strip-tags
+beautifulsoup4
